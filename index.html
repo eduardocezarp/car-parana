@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CAR Paraná</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+html,body,#map{
+height:100%;
+margin:0;
+padding:0;
+}
+
+.painel{
+position:absolute;
+top:10px;
+left:10px;
+z-index:1000;
+background:white;
+padding:10px;
+border-radius:8px;
+box-shadow:0 0 10px rgba(0,0,0,.3);
+width:300px;
+}
+
+input{
+width:100%;
+padding:8px;
+margin-top:5px;
+}
+
+button{
+width:100%;
+padding:8px;
+margin-top:5px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="painel">
+<b>Consulta CAR Paraná</b>
+
+<input id="municipio" placeholder="Município">
+
+<button onclick="buscarMunicipio()">
+Buscar Município
+</button>
+
+<p>
+Clique no mapa para navegar.
+</p>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+var map = L.map('map').setView([-24.5,-51.5],7);
+
+L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+maxZoom:19
+}
+).addTo(map);
+
+var camada;
+
+function buscarMunicipio(){
+
+let municipio =
+document.getElementById("municipio").value;
+
+if(!municipio){
+alert("Informe um município");
+return;
+}
+
+if(camada){
+map.removeLayer(camada);
+}
+
+const url =
+"https://geoserver.car.gov.br/geoserver/sicar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sicar:sicar_imoveis_pr&outputFormat=application/json&CQL_FILTER=municipio='" + municipio + "'";
+
+fetch(url)
+.then(r=>r.json())
+.then(data=>{
+
+camada = L.geoJSON(data,{
+
+onEachFeature:function(feature,layer){
+
+let p = feature.properties;
+
+layer.bindPopup(
+"<b>CAR:</b> "+p.cod_imovel+
+"<br><b>Município:</b> "+p.municipio+
+"<br><b>Área:</b> "+p.area+" ha"+
+"<br><b>Status:</b> "+p.status_imovel+
+"<br><b>Condição:</b> "+p.condicao+
+"<br><b>Módulos Fiscais:</b> "+p.m_fiscal+
+"<br><b>Tipo:</b> "+p.tipo_imovel
+);
+
+}
+
+}).addTo(map);
+
+map.fitBounds(camada.getBounds());
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
